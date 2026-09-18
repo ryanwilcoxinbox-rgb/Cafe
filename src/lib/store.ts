@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { BrewerType, Kit, Strength } from '../data/types'
+import type { Bean, BrewerType, Kit, Strength } from '../data/types'
 
 export type Taste = 'sour' | 'right' | 'bitter'
 export type Body = 'weak' | 'good' | 'strong'
@@ -17,7 +17,12 @@ export interface BrewLog {
   seconds: number
   taste: Taste
   body?: Body
+  /** Bean name at the time of brewing (kept even if the bag is deleted). */
   beans?: string
+  beanId?: string
+  ratio?: number
+  tempC?: number
+  favourite?: boolean
   notes?: string
 }
 
@@ -25,18 +30,23 @@ export interface BrewPrefs {
   people: number
   strength: Strength
   grinderId?: string
+  /** Fine-tune overrides. Absent = BrewPrint's recipe. */
+  ratio?: number
+  tempC?: number
 }
 
 export interface State {
   kit: Kit | null
-  /** Grind offsets learned from feedback, keyed "brewer:grinder". */
+  /** Grind offsets learned from feedback, keyed "brewer:grinder" or "brewer:grinder:bean". */
   dialIn: Record<string, number>
   prefs: Partial<Record<BrewerType, BrewPrefs>>
   journal: BrewLog[]
+  beans: Bean[]
+  activeBeanId?: string
 }
 
 const KEY = 'brewprint:v1'
-const EMPTY: State = { kit: null, dialIn: {}, prefs: {}, journal: [] }
+const EMPTY: State = { kit: null, dialIn: {}, prefs: {}, journal: [], beans: [] }
 
 function load(): State {
   try {

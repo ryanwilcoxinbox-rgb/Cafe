@@ -3,6 +3,7 @@ import { BREWERS } from './data/brewers'
 import type { BrewerType } from './data/types'
 import { go, useRoute } from './lib/router'
 import { useStore } from './lib/store'
+import { BeanForm, BeanList } from './screens/Beans'
 import { Brew } from './screens/Brew'
 import { Done } from './screens/Done'
 import { Home } from './screens/Home'
@@ -22,6 +23,8 @@ export function App() {
   else if (page === 'brew' && owns) screen = <Brew key={`brew-${type}`} type={type} kit={kit} />
   else if (page === 'done' && owns) screen = <Done key={`done-${type}`} type={type} kit={kit} />
   else if (page === 'journal') screen = <Journal key="journal" />
+  else if (page === 'beans' && !param) screen = <BeanList key="beans" />
+  else if (page === 'beans') screen = <BeanForm key={`bean-${param}`} id={param === 'new' ? undefined : param} />
   else {
     if (page) queueMicrotask(() => go('', true))
     screen = <Home key="home" kit={kit} />

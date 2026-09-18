@@ -18,6 +18,7 @@ export const BREWERS: Record<BrewerType, BrewerDef> = {
     grindLabel: 'Medium-fine',
     grindLike: 'Like table salt',
     totalTime: '3–3½ min',
+    roasts: ['light', 'medium'],
     beans: {
       roast: 'Light to medium roast',
       origins: 'Washed Ethiopia, Kenya or Colombia',
@@ -40,6 +41,7 @@ export const BREWERS: Record<BrewerType, BrewerDef> = {
     grindLabel: 'Medium-fine',
     grindLike: 'A touch finer than table salt',
     totalTime: '3 min',
+    roasts: ['light', 'medium', 'dark'],
     beans: {
       roast: 'Medium roast',
       origins: 'Colombia, Guatemala or a natural Ethiopia',
@@ -66,6 +68,7 @@ export const BREWERS: Record<BrewerType, BrewerDef> = {
     grindLabel: 'Fine',
     grindLike: 'Like fine sand, just coarser than espresso',
     totalTime: '5 min',
+    roasts: ['medium', 'dark'],
     beans: {
       roast: 'Medium-dark roast',
       origins: 'Brazil, Sumatra or an Italian-style espresso blend',
@@ -92,6 +95,7 @@ export const BREWERS: Record<BrewerType, BrewerDef> = {
     grindLabel: 'Medium-coarse',
     grindLike: 'Like rough sea salt',
     totalTime: '9–12 min (mostly waiting)',
+    roasts: ['medium', 'dark'],
     beans: {
       roast: 'Medium to medium-dark roast',
       origins: 'Brazil, Guatemala or Sumatra',
@@ -116,6 +120,7 @@ export const BREWERS: Record<BrewerType, BrewerDef> = {
     grindLabel: 'Medium',
     grindLike: 'Like coarse sand',
     totalTime: '4–5 min',
+    roasts: ['light', 'medium'],
     beans: {
       roast: 'Light to medium roast',
       origins: 'Washed Central America or Ethiopia',
@@ -138,6 +143,7 @@ export const BREWERS: Record<BrewerType, BrewerDef> = {
     grindLabel: 'Coarse',
     grindLike: 'Like raw cane sugar',
     totalTime: '8–12 hours in the fridge',
+    roasts: ['medium', 'dark'],
     beans: {
       roast: 'Medium to medium-dark roast',
       origins: 'Brazil or Colombia (a natural Ethiopia for a berry twist)',

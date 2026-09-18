@@ -1,5 +1,5 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import { motion } from 'motion/react'
+import { useEffect, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { Leaf } from './Art'
 
 export function Screen({
@@ -198,5 +198,75 @@ export function Radio({ checked }: { checked: boolean }) {
     <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] ${checked ? 'border-accent' : 'border-muted/50'}`}>
       {checked && <motion.span layoutId="radio-dot" className="h-3 w-3 rounded-full bg-accent" />}
     </span>
+  )
+}
+
+export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
+          <motion.div
+            className="absolute inset-0 bg-black/35"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
+          <motion.div
+            className="relative max-h-[85dvh] w-full max-w-[420px] overflow-y-auto rounded-t-[28px] bg-card px-6 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 32, stiffness: 380 }}
+          >
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line" />
+            <h2 className="mb-4 font-serif text-2xl">{title}</h2>
+            {children}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+export function NumberStepper({
+  label,
+  value,
+  onChange,
+  step,
+  min,
+  max,
+  format,
+}: {
+  label: string
+  value: number
+  onChange: (v: number) => void
+  step: number
+  min: number
+  max: number
+  format: (v: number) => string
+}) {
+  const nudge = (d: number) => onChange(Math.min(max, Math.max(min, Math.round((value + d) * 10) / 10)))
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[15px]">{label}</span>
+      <div className="flex items-center gap-1 rounded-xl bg-sunk p-1">
+        <RoundButton label={`Less ${label.toLowerCase()}`} disabled={value <= min} onClick={() => nudge(-step)}>
+          −
+        </RoundButton>
+        <span className="tabular w-20 text-center font-medium">{format(value)}</span>
+        <RoundButton label={`More ${label.toLowerCase()}`} disabled={value >= max} onClick={() => nudge(step)}>
+          +
+        </RoundButton>
+      </div>
+    </div>
   )
 }

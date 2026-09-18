@@ -4,6 +4,21 @@ export type Strength = 'lighter' | 'balanced' | 'stronger'
 
 export type ScaleType = 'micro' | 'timer' | 'basic'
 
+export type Roast = 'light' | 'medium' | 'dark'
+
+export interface Bean {
+  id: string
+  name: string
+  roaster?: string
+  roast: Roast
+  process?: 'washed' | 'natural' | 'honey' | 'other'
+  /** YYYY-MM-DD */
+  roastedOn?: string
+  notes?: string
+  finished?: boolean
+  addedAt: number
+}
+
 /** One physical brewer the user owns. People can own two of the same type (e.g. a 45cl and a 1L press). */
 export interface OwnedBrewer {
   uid: string
@@ -55,6 +70,8 @@ export interface BrewerDef {
   grindLabel: string
   grindLike: string
   totalTime: string
+  /** Roast levels that suit this brewer. */
+  roasts: Roast[]
   beans: BeanAdvice
 }
 
@@ -99,7 +116,13 @@ export interface Recipe {
   /** AeroPress concentrate: hot water added after pressing. */
   bypass: number
   ratio: number
+  /** Ratio before the strength shift (BrewPrint's or the user's fine-tune). */
+  baseRatio: number
+  /** Numeric brew temperature, null for moka/cold. */
+  tempC: number | null
   temp: { value: string; hint: string }
+  /** Advice about the chosen beans (roast match, freshness). */
+  beanNotes: string[]
   grind: GrindResult
   prep: string[]
   steps: Step[]

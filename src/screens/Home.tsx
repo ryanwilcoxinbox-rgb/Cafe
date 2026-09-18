@@ -6,11 +6,16 @@ import { BREWER_ORDER, BREWERS } from '../data/brewers'
 import type { BrewerType, Kit } from '../data/types'
 import { go } from '../lib/router'
 import { useStore } from '../lib/store'
+import { brewAgain } from '../lib/brewAgain'
+import { activeBean } from '../lib/useRecipe'
+import { beanAge, RoastDot } from './Beans'
 
 const TASTE_WORD = { sour: 'a bit sour', right: 'just right', bitter: 'a bit bitter' }
 
 export function Home({ kit }: { kit: Kit }) {
   const journal = useStore((s) => s.journal)
+  const bean = useStore(activeBean)
+  const favourites = journal.filter((j) => j.favourite && kit.brewers.some((b) => b.type === j.type)).slice(0, 4)
   const types = BREWER_ORDER.filter((t) => kit.brewers.some((b) => b.type === t))
   const last = journal[0]
   const [picked, setPicked] = useState<BrewerType>(last && types.includes(last.type) ? last.type : types[0])
@@ -22,6 +27,10 @@ export function Home({ kit }: { kit: Kit }) {
           <Mark className="h-7 w-7" />
           <span className="font-serif text-xl">BrewPrint</span>
           <nav className="ml-auto flex gap-1">
+            <IconLink label="My beans" onClick={() => go('beans')}>
+              <ellipse cx="12" cy="12" rx="6" ry="8.5" transform="rotate(35 12 12)" />
+              <path d="M8.8 16.8c1.8-2.8 1-5.6 3.2-7.8s2.8-2.8 3.2-3.8" />
+            </IconLink>
             <IconLink label="Brew journal" onClick={() => go('journal')}>
               <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z M5 17a3 3 0 0 1 3-3h11 M9 8h6" />
             </IconLink>
@@ -45,6 +54,33 @@ export function Home({ kit }: { kit: Kit }) {
         </h1>
         <p className="mt-2 text-[17px] text-muted">Choose a method to get started.</p>
       </div>
+
+      <button onClick={() => go('beans')} className="-mt-2 mb-5 flex items-center gap-2 rounded-full bg-sunk/70 py-1.5 pr-4 pl-2 text-sm">
+        {bean ? <RoastDot roast={bean.roast} /> : <span className="flex h-7 w-7 items-center justify-center text-lg text-muted">+</span>}
+        <span className="max-w-[240px] truncate">{bean ? [bean.name, beanAge(bean)].filter(Boolean).join(' · ') : 'Add the beans you’re drinking'}</span>
+      </button>
+
+      {favourites.length > 0 && (
+        <section className="mb-6">
+          <p className="eyebrow mb-3">Your favourites</p>
+          <div className="-mx-6 flex snap-x gap-3 overflow-x-auto px-6 pb-1">
+            {favourites.map((f) => (
+              <motion.button
+                key={f.id}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => brewAgain(f)}
+                className="flex w-56 shrink-0 snap-start items-center gap-3 rounded-2xl border border-line bg-card p-3 text-left"
+              >
+                <BrewerArt type={f.type} className="h-12 w-12 shrink-0" />
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">{BREWERS[f.type].name}</span>
+                  <span className="block truncate text-sm text-muted">{f.beans ?? `${f.coffee} g · ${f.grind}`}</span>
+                </span>
+              </motion.button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div role="radiogroup" aria-label="Brew method" className="space-y-3">
         {types.map((type, i) => {

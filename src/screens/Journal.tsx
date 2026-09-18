@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { BrewerArt } from '../components/Art'
-import { Button, Chevron, Hand, Screen } from '../components/ui'
+import { Button, Chevron, Hand, Screen, Segmented } from '../components/ui'
+import { brewAgain, toggleFavourite } from '../lib/brewAgain'
 import { BREWERS } from '../data/brewers'
 import { mmss } from '../lib/device'
 import { go } from '../lib/router'
@@ -14,6 +16,9 @@ const TASTE = {
 
 export function Journal() {
   const journal = useStore((s) => s.journal)
+  const kit = useStore((s) => s.kit)
+  const [filter, setFilter] = useState<'all' | 'fav'>('all')
+  const shown = filter === 'fav' ? journal.filter((j) => j.favourite) : journal
   const remove = (id: string) => setState((s) => ({ ...s, journal: s.journal.filter((j) => j.id !== id) }))
 
   return (
@@ -41,8 +46,23 @@ export function Journal() {
 
       {journal.length === 0 && <Hand className="mt-10 text-center">Nothing here yet. Your first brew is waiting.</Hand>}
 
-      <ul className="mt-6 space-y-3">
-        {journal.map((j, i) => (
+      {journal.length > 0 && (
+        <div className="mt-6">
+          <Segmented
+            label="Show"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: 'all', label: 'All brews' },
+              { value: 'fav', label: 'Favourites' },
+            ]}
+          />
+        </div>
+      )}
+      {filter === 'fav' && shown.length === 0 && <Hand className="mt-8 text-center">Tap the star on a brew you loved.</Hand>}
+
+      <ul className="mt-4 space-y-3">
+        {shown.map((j, i) => (
           <motion.li
             key={j.id}
             initial={{ opacity: 0, y: 8 }}
@@ -54,12 +74,15 @@ export function Journal() {
               <BrewerArt type={j.type} className="h-14 w-14" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="font-serif text-xl">{BREWERS[j.type].name}</p>
-                <time className="shrink-0 text-xs text-muted" dateTime={new Date(j.at).toISOString()}>
-                  {new Date(j.at).toLocaleDateString([], { day: 'numeric', month: 'short' })},{' '}
-                  {new Date(j.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </time>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-serif text-xl leading-tight">{BREWERS[j.type].name}</p>
+                  <time className="text-xs text-muted" dateTime={new Date(j.at).toISOString()}>
+                    {new Date(j.at).toLocaleDateString([], { day: 'numeric', month: 'short' })},{' '}
+                    {new Date(j.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </time>
+                </div>
+                <Star on={!!j.favourite} onClick={() => toggleFavourite(j.id)} />
               </div>
               <p className="tabular text-sm text-muted">
                 {j.coffee} g · {j.water} g · {j.grind}
@@ -71,6 +94,13 @@ export function Journal() {
                 <span className="text-xs text-muted">
                   {j.people} {j.people === 1 ? 'cup' : 'cups'} · {j.strength}
                 </span>
+              </div>
+              <div className="mt-3 flex items-center gap-3 border-t border-line pt-2">
+                {kit?.brewers.some((b) => b.type === j.type) && (
+                  <button onClick={() => brewAgain(j)} className="text-sm font-medium text-accent">
+                    Brew again →
+                  </button>
+                )}
                 <button onClick={() => remove(j.id)} className="ml-auto text-xs text-muted underline-offset-2 hover:underline" aria-label="Delete this brew">
                   Delete
                 </button>
@@ -80,5 +110,21 @@ export function Journal() {
         ))}
       </ul>
     </Screen>
+  )
+}
+
+export function Star({ on, onClick }: { on: boolean; onClick: () => void }) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.8 }}
+      onClick={onClick}
+      aria-pressed={on}
+      aria-label={on ? 'Remove from favourites' : 'Add to favourites'}
+      className={`-mt-1 -mr-1 rounded-full p-1.5 ${on ? 'text-accent' : 'text-muted/60'}`}
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill={on ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" />
+      </svg>
+    </motion.button>
   )
 }

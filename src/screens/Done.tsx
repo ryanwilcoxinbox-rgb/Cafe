@@ -4,14 +4,14 @@ import { CupArt } from '../components/Art'
 import { Button, Chip, Hand, Screen, StepHeader } from '../components/ui'
 import type { BrewerType, Kit } from '../data/types'
 import { advise } from '../lib/dialin'
-import { dialKey } from '../lib/recipe'
+import { dialKey, dialOffset } from '../lib/recipe'
 import { go } from '../lib/router'
 import { lastBrew } from '../lib/stopwatch'
 import { setState, uid, type Body, type Taste } from '../lib/store'
 import { useRecipe } from '../lib/useRecipe'
 
 export function Done({ type, kit }: { type: BrewerType; kit: Kit }) {
-  const { recipe: r, prefs } = useRecipe(type, kit)
+  const { recipe: r, prefs, bean } = useRecipe(type, kit)
   const [taste, setTaste] = useState<Taste | null>(null)
   const [body, setBody] = useState<Body>('good')
   const [beans, setBeans] = useState('')
@@ -36,15 +36,20 @@ export function Done({ type, kit }: { type: BrewerType; kit: Kit }) {
           seconds: lastBrew.seconds,
           taste,
           body,
-          beans: beans.trim() || undefined,
+          beans: bean?.name ?? (beans.trim() || undefined),
+          beanId: bean?.id,
+          ratio: r.baseRatio,
+          tempC: r.tempC ?? undefined,
         },
         ...s.journal,
       ]
       if (remember) {
         const g = r.grind.grinder
-        if (g && advice.grindDelta) {
-          const key = dialKey(type, g.id)
-          next.dialIn = { ...s.dialIn, [key]: (s.dialIn[key] ?? 0) + advice.grindDelta }
+        if (g && (advice.grindDelta || bean)) {
+          const value = dialOffset(s.dialIn, type, g.id, bean?.id) + advice.grindDelta
+          // The bag keeps its own setting; the latest learning also becomes the start point for new bags.
+          next.dialIn = { ...s.dialIn, [dialKey(type, g.id)]: value }
+          if (bean) next.dialIn[dialKey(type, g.id, bean.id)] = value
         }
         next.prefs = { ...s.prefs, [type]: { ...prefs, strength: advice.strength } }
       }
@@ -111,16 +116,24 @@ export function Done({ type, kit }: { type: BrewerType; kit: Kit }) {
               ))}
             </div>
 
-            <label className="mt-5 block text-sm text-muted" htmlFor="beans">
-              Which beans? <span className="opacity-70">(optional)</span>
-            </label>
-            <input
-              id="beans"
-              value={beans}
-              onChange={(e) => setBeans(e.target.value)}
-              placeholder="e.g. Ethiopia Guji, Square Mile"
-              className="mt-2 w-full rounded-2xl border border-line bg-card px-4 py-3 text-[16px] placeholder:text-muted/60"
-            />
+            {bean ? (
+              <p className="mt-5 text-sm text-muted">
+                Beans: <span className="text-ink">{bean.name}</span>. {remember && 'This bag remembers its own grind.'}
+              </p>
+            ) : (
+              <>
+                <label className="mt-5 block text-sm text-muted" htmlFor="beans">
+                  Which beans? <span className="opacity-70">(optional)</span>
+                </label>
+                <input
+                  id="beans"
+                  value={beans}
+                  onChange={(e) => setBeans(e.target.value)}
+                  placeholder="e.g. Ethiopia Guji, Square Mile"
+                  className="mt-2 w-full rounded-2xl border border-line bg-card px-4 py-3 text-[16px] placeholder:text-muted/60"
+                />
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

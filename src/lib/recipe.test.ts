@@ -107,3 +107,37 @@ describe('no scale', () => {
     expect(beansInTbsp(2)).toBe('½ tbsp')
   })
 })
+
+describe('beans', () => {
+  const now = Date.parse('2026-09-18T12:00:00')
+  const light = { id: 'b1', roast: 'light' as const, roastedOn: '2026-09-16' }
+
+  it('runs light roasts hotter and extends the bloom for fresh beans', () => {
+    const r = buildRecipe({ type: 'v60', kit, people: 1, strength: 'balanced', bean: light, now })
+    expect(r.tempC).toBe(96)
+    expect(r.steps[0].seconds).toBe(60)
+    expect(r.beanNotes.join(' ')).toMatch(/very fresh/)
+  })
+
+  it('cools the water and warns for dark roasts in a V60', () => {
+    const r = buildRecipe({ type: 'v60', kit, people: 1, strength: 'balanced', bean: { id: 'b2', roast: 'dark' }, now })
+    expect(r.tempC).toBe(91)
+    expect(r.beanNotes[0]).toMatch(/harsh/)
+  })
+
+  it('prefers the bean dial-in, falling back to the brewer one', () => {
+    const dialIn = { 'v60:k6': 2, 'v60:k6:b1': -6 }
+    expect(buildRecipe({ type: 'v60', kit, people: 1, strength: 'balanced', dialIn, bean: light, now }).grind.setting).toBe(82)
+    expect(buildRecipe({ type: 'v60', kit, people: 1, strength: 'balanced', dialIn, bean: { id: 'new', roast: 'medium' }, now }).grind.setting).toBe(90)
+  })
+})
+
+describe('fine-tune', () => {
+  it('uses a custom ratio and temperature', () => {
+    const r = buildRecipe({ type: 'v60', kit, people: 1, strength: 'stronger', custom: { ratio: 17, tempC: 90 } })
+    expect(r.baseRatio).toBe(17)
+    expect(r.ratio).toBe(15.5)
+    expect(r.tempC).toBe(90)
+    expect(r.prep[0]).toMatch(/90°C/)
+  })
+})

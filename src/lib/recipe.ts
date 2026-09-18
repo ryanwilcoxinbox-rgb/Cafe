@@ -1,6 +1,7 @@
 import { brewerName, BREWERS, sizeOf } from '../data/brewers'
 import { grinderById } from '../data/grinders'
 import type {
+  Bean,
   BrewerDef,
   BrewerSize,
   BrewerType,
@@ -8,6 +9,7 @@ import type {
   GrindResult,
   Kit,
   Recipe,
+  Roast,
   Step,
   Strength,
 } from '../data/types'
@@ -23,9 +25,31 @@ export interface RecipeInput {
   strength: Strength
   grinderId?: string
   dialIn?: Record<string, number>
+  bean?: Pick<Bean, 'id' | 'roast' | 'roastedOn'> | null
+  /** Fine-tune overrides from the user. */
+  custom?: { ratio?: number; tempC?: number }
+  /** For tests. */
+  now?: number
 }
 
-export const dialKey = (type: BrewerType, grinderId: string) => `${type}:${grinderId}`
+/** Dial-in keys: per brewer + grinder, and optionally per bag of beans. */
+export const dialKey = (type: BrewerType, grinderId: string, beanId?: string) =>
+  beanId ? `${type}:${grinderId}:${beanId}` : `${type}:${grinderId}`
+
+/** A bean's own dial-in wins; a new bag starts from the brewer's general one. */
+export function dialOffset(dialIn: Record<string, number> | undefined, type: BrewerType, grinderId: string, beanId?: string) {
+  if (!dialIn) return 0
+  return (beanId ? dialIn[dialKey(type, grinderId, beanId)] : undefined) ?? dialIn[dialKey(type, grinderId)] ?? 0
+}
+
+export const ROAST_TEMP: Record<Roast, number> = { light: 2, medium: 0, dark: -3 }
+
+export function restDays(roastedOn: string | undefined, now = Date.now()) {
+  if (!roastedOn) return null
+  const t = Date.parse(roastedOn + 'T00:00:00')
+  if (Number.isNaN(t)) return null
+  return Math.max(0, Math.floor((now - t) / 86_400_000))
+}
 
 export function interpolate(points: [number, number][], x: number) {
   if (x <= points[0][0]) return points[0][1]
@@ -96,10 +120,16 @@ export function grindFor(
   return { ...base, loads }
 }
 
-export function tempFor(def: BrewerDef, kit: Kit) {
-  const t = def.tempC
-  if (t === 'cold') return { value: 'Cold', hint: 'Filtered water, fridge-cold is fine' }
-  if (def.type === 'moka') return { value: 'Just boiled', hint: 'Hot water goes into the base' }
+/** Brew temperature: the user's fine-tune, else the brewer's default nudged by roast. */
+export function brewTemp(def: BrewerDef, roast?: Roast, custom?: number): number | null {
+  if (def.tempC === 'cold' || def.type === 'moka') return null
+  if (custom) return custom
+  return Math.min(100, def.tempC + (roast ? ROAST_TEMP[roast] : 0))
+}
+
+export function tempFor(def: BrewerDef, kit: Kit, t: number | null) {
+  if (def.tempC === 'cold') return { value: 'Cold', hint: 'Filtered water, fridge-cold is fine' }
+  if (t === null) return { value: 'Just boiled', hint: 'Hot water goes into the base' }
   const wait = t >= 97 ? 'Straight off the boil' : t >= 95 ? 'Boil, then wait ~30 s' : t >= 92 ? 'Boil, then wait ~1 min' : 'Boil, then wait ~2 min'
   return { value: `${t}°C`, hint: kit.kettle.tempControl ? `Set your kettle to ${t}°C` : wait }
 }
@@ -115,7 +145,10 @@ export function buildRecipe(input: RecipeInput): Recipe {
   const def = BREWERS[type]
   const people = clamp(Math.round(input.people), 1, 12)
   const sizes = ownedSizes(kit, type)
-  const ratio = def.ratio + STRENGTH_SHIFT[strength]
+  const baseRatio = input.custom?.ratio ?? def.ratio
+  const ratio = baseRatio + STRENGTH_SHIFT[strength]
+  const tempC = brewTemp(def, input.bean?.roast, input.custom?.tempC)
+  const days = restDays(input.bean?.roastedOn, input.now)
   const notes: string[] = []
   let size: BrewerSize
   let rounds = 1
@@ -183,7 +216,7 @@ export function buildRecipe(input: RecipeInput): Recipe {
   coffee = precise ? Math.round(coffee * 10) / 10 : Math.round(coffee)
 
   const grinder = input.grinderId ? grinderById(input.grinderId) ?? null : defaultGrinder(kit, coffee)
-  const offset = grinder ? input.dialIn?.[dialKey(type, grinder.id)] ?? 0 : 0
+  const offset = grinder ? dialOffset(input.dialIn, type, grinder.id, input.bean?.id) : 0
   const grind = grindFor(def, grinder, coffee, offset)
 
   if (rounds > 1) {
@@ -204,6 +237,8 @@ export function buildRecipe(input: RecipeInput): Recipe {
     grind,
     hasScale: kit.scales.length > 0,
     gooseneck: kit.kettle.gooseneck,
+    tempC,
+    fresh: days !== null && days < 4,
   }
   return {
     brewer: def,
@@ -215,7 +250,10 @@ export function buildRecipe(input: RecipeInput): Recipe {
     water,
     bypass,
     ratio: def.scaling === 'moka' ? Math.round((water / coffee) * 10) / 10 : ratio,
-    temp: tempFor(def, kit),
+    baseRatio,
+    tempC,
+    temp: tempFor(def, kit, tempC),
+    beanNotes: beanNotes(def, input.bean?.roast, days, tempC, !!input.custom?.tempC),
     grind,
     prep: prepFor(ctx),
     steps: STEPS[type](ctx),
@@ -234,6 +272,45 @@ interface Ctx {
   grind: GrindResult
   hasScale: boolean
   gooseneck: boolean
+  tempC: number | null
+  fresh: boolean
+}
+
+const POUR_OVER: BrewerType[] = ['v60', 'chemex']
+
+function beanNotes(def: BrewerDef, roast: Roast | undefined, days: number | null, tempC: number | null, customTemp: boolean) {
+  const notes: string[] = []
+  const name = def.type === 'coldbrew' ? 'cold brew' : `a ${def.name}`
+  if (roast && !def.roasts.includes(roast)) {
+    if (roast === 'dark') {
+      notes.push(`Dark roasts can turn harsh in ${name}.${tempC && !customTemp ? ` We've cooled the water to ${tempC}°C.` : ''} Go coarser if it tastes bitter.`)
+    } else if (roast === 'light') {
+      notes.push(
+        def.type === 'coldbrew'
+          ? 'Light roasts can taste flat as cold brew. Give it the full 12 hours.'
+          : `Light roasts can taste thin or sour in ${name}. Grind a touch finer if it's sour.`,
+      )
+    }
+  } else if (roast && tempC && !customTemp && ROAST_TEMP[roast]) {
+    notes.push(
+      roast === 'light'
+        ? `Light roast, so the water is a touch hotter (${tempC}°C) to bring out the sweetness.`
+        : `Dark roast, so the water is a little cooler (${tempC}°C) to keep it smooth.`,
+    )
+  }
+  if (days !== null) {
+    const ago = days === 0 ? 'Roasted today' : days === 1 ? 'Roasted yesterday' : `Roasted ${days} days ago`
+    if (days < 4) {
+      notes.push(
+        POUR_OVER.includes(def.type)
+          ? `${ago}: very fresh. It'll bloom a lot, so we've added 15 s to the bloom.`
+          : `${ago}: very fresh. It can taste a bit sharp until it's rested for 4 days or so.`,
+      )
+    } else if (days <= 35) notes.push(`${ago}: right in the sweet spot.`)
+    else if (days <= 60) notes.push(`${ago}: past its peak. Grind a touch finer to get the flavour out.`)
+    else notes.push(`${ago}: pretty stale. Still drinkable, but a fresh bag will taste much better.`)
+  }
+  return notes
 }
 
 const g = (n: number) => `${n} g`
@@ -246,9 +323,9 @@ function prepFor(c: Ctx): string[] {
   const heat =
     def.tempC === 'cold'
       ? `Measure out ${c.water} ml of cold, filtered water.`
-      : def.type === 'moka'
+      : c.tempC === null
         ? 'Boil the kettle. Starting with hot water stops the coffee from cooking on the stove.'
-        : `Heat your water to ${def.tempC}°C${kit.kettle.tempControl ? '' : ' (' + tempFor(def, kit).hint.toLowerCase() + ')'}.`
+        : `Heat your water to ${c.tempC}°C${kit.kettle.tempControl ? '' : ' (' + tempFor(def, kit, c.tempC).hint.toLowerCase() + ')'}.`
   const dose = c.hasScale ? g(c.coffee) : `${beansInTbsp(c.coffee)} of whole beans (${g(c.coffee)})`
   const where = c.grind.grinder && c.grind.setting !== null ? ` on your ${c.grind.grinder.name} at ${c.grind.display}` : ''
   const grind =
@@ -284,7 +361,7 @@ const STEPS: Record<BrewerType, (c: Ctx) => Step[]> = {
         title: 'Let it bloom',
         why: 'This lets out CO₂, which gives a sweeter, more balanced cup.',
         body: `Pour gently ${upTo(c, bloom)}. Wet all the grounds, then give it a gentle swirl.`,
-        seconds: 45,
+        seconds: c.fresh ? 60 : 45,
         target: bloom,
         aside: 'Good coffee takes a little patience.',
       },
@@ -316,7 +393,7 @@ const STEPS: Record<BrewerType, (c: Ctx) => Step[]> = {
         title: 'Let it bloom',
         why: 'This lets out CO₂, so the rest of the water can extract evenly.',
         body: `Pour gently ${upTo(c, bloom)}, just enough to wet everything.`,
-        seconds: 45,
+        seconds: c.fresh ? 60 : 45,
         target: bloom,
         aside: 'Watch it puff up.',
       },
