@@ -1,11 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { registerSW } from 'virtual:pwa-register'
+// Imported first so its beforeinstallprompt listener is attached before anything renders.
+import './lib/installPrompt'
+import { initPWA } from './lib/pwa'
 import { App } from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import './index.css'
 
-registerSW({ immediate: true })
+initPWA()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

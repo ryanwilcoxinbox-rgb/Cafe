@@ -43,17 +43,33 @@ export interface State {
   journal: BrewLog[]
   beans: Bean[]
   activeBeanId?: string
+  /** The user closed the "Add to Home Screen" banner. Permanent. */
+  installPromptDismissed: boolean
 }
 
 const KEY = 'brewprint:v1'
-const EMPTY: State = { kit: null, dialIn: {}, prefs: {}, journal: [], beans: [] }
+export const DEFAULTS: State = { kit: null, dialIn: {}, prefs: {}, journal: [], beans: [], installPromptDismissed: false }
+
+/**
+ * Saved data from any earlier version is merged over the current defaults, so a new preference
+ * never resets someone's kit, beans or journal. Corrupt data falls back to defaults.
+ */
+export function hydrate(raw: string | null): State {
+  if (!raw) return DEFAULTS
+  try {
+    const saved = JSON.parse(raw)
+    if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return DEFAULTS
+    return { ...DEFAULTS, ...saved }
+  } catch {
+    return DEFAULTS
+  }
+}
 
 function load(): State {
   try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? { ...EMPTY, ...JSON.parse(raw) } : EMPTY
+    return hydrate(localStorage.getItem(KEY))
   } catch {
-    return EMPTY
+    return DEFAULTS
   }
 }
 

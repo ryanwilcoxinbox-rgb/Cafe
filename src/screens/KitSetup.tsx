@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { AppVersion } from '../components/AppVersion'
 import { BrewerArt, CupArt } from '../components/Art'
 import { Button, Chip, Hand, Screen, Segmented, StepHeader } from '../components/ui'
 import { BREWER_ORDER, BREWERS } from '../data/brewers'
@@ -126,6 +127,7 @@ function BrewersPage({ kit, setKit, fresh }: PageProps & { fresh: boolean }) {
         })}
       </div>
       <Hand className="mt-5">Got two sizes? Tap both. We'll pick the right one for the job.</Hand>
+      {!fresh && <AppVersion />}
     </>
   )
 }

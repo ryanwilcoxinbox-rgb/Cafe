@@ -1,6 +1,7 @@
 import { useEffect, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Leaf } from './Art'
+import { NoticeSlot } from './Notices'
 
 export function Screen({
   header,
@@ -21,6 +22,7 @@ export function Screen({
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
     >
       <header className="flex items-center gap-3 px-6 pt-[max(1.25rem,env(safe-area-inset-top))] pb-2">{header}</header>
+      <NoticeSlot />
       <main className="flex-1 px-6 pb-6">{children}</main>
       {cta && (
         <div className="sticky bottom-0 bg-gradient-to-t from-card from-65% to-transparent px-6 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">{cta}</div>

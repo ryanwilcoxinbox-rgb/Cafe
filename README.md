@@ -45,6 +45,8 @@ Stack: Vite, React 19, TypeScript, Tailwind CSS 4, Motion, vite-plugin-pwa, Vite
 - `src/data/grinders.ts`: grinder dial maps (`[coarseness, setting]` points)
 - `src/lib/recipe.ts`: the recipe engine (scaling, rounds, grinder choice, step scripts)
 - `src/lib/brewAgain.ts`: reload a past brew's settings
+- `src/lib/pwa.ts`, `updateLogic.ts`: service-worker registration and update checks
+- `src/lib/install.ts`, `installPrompt.ts`, `notices.ts`: the install banner and the one-banner-at-a-time queue
 - `src/lib/dialin.ts`: taste feedback turned into grind and strength adjustments
 - `src/screens/*`: Kit setup → Home → Recipe → Brew → Done → Journal, plus Beans
 
@@ -54,6 +56,42 @@ Stack: Vite, React 19, TypeScript, Tailwind CSS 4, Motion, vite-plugin-pwa, Vite
 ## Deploy
 
 Hosted on Vercel, which picks up Vite automatically (build: `npm run build`, output: `dist`). `.github/workflows/ci.yml` runs the tests and a build on every push. The app uses relative paths and hash routing, so any static host works.
+
+## Installing and updates
+
+### Add to Home Screen
+A single banner explains how to install BrewPrint, with instructions for your device and browser:
+- **iPhone/iPad Safari:** the Share-sheet steps.
+- **Chrome on iOS:** its own Share steps.
+- **Firefox, Edge and other iOS browsers:** the same Share steps, plus a fallback to try Safari.
+- **Android:** an **Install** button if the browser offers one, otherwise menu instructions.
+- **Desktop:** a low-key "best on your phone" note.
+
+The banner never appears when BrewPrint is already running installed, or during a brew. Once closed, it stays gone for good (`installPromptDismissed` in saved state). The decision logic is in `src/lib/install.ts` (pure, unit-tested); the browser side is in `src/lib/installPrompt.ts`.
+
+### How new versions reach people
+- `src/lib/pwa.ts` registers the service worker itself (`injectRegister: null`) and keeps the registration. It calls `registration.update()` **every minute** while the app is open and **every time it comes back to the foreground**. The foreground check catches Home Screen apps that sit suspended in the app switcher for days.
+- A new version downloads in the background. The app then shows **"A new version is ready — Update and reload"**. It uses `registerType: 'prompt'` rather than `autoUpdate` so a reload can never wipe a brew in progress, and the banner never appears on the brew screen.
+- **My kit → About BrewPrint** shows the running version, git commit and build time. **Check for updates** asks the service worker to look for a new version and also fetches `/version.json` (written at build time, never cached) to show the latest deployed build. A failed check says "You may be offline"; it isn't treated as an error.
+- `vercel.json` serves `sw.js`, `manifest.webmanifest`, `version.json` and `index.html` with `Cache-Control: public, max-age=0, must-revalidate`. Hashed files in `/assets` are cached for a year (`immutable`).
+- Each build embeds its own timestamp, so no two builds are byte-identical. That's intentional: to see what's deployed, compare `version.json`, not a hash of the whole build.
+
+### Support: someone is stuck on an old version
+Anyone who installed BrewPrint before version 0.3.0 still has the old service worker, which doesn't have the update checks yet. To move them over **once**:
+
+1. Force-close the Home Screen app.
+2. Reopen it.
+3. Force-close it again.
+4. Reopen it a second time.
+5. Open **My kit** and scroll down. You should see an **About BrewPrint** section showing version 0.3.0 or later. Older versions don't have this section at all.
+
+If it still shows the old version:
+
+6. Remove the app from the Home Screen.
+7. Open the website again in the browser.
+8. Add it to the Home Screen again.
+
+This is a one-time fix for people on the old service worker. From 0.3.0 onwards, updates arrive through the in-app "Update and reload" banner.
 
 ## Roadmap
 
