@@ -127,6 +127,31 @@ export const BREWERS: Record<BrewerType, BrewerDef> = {
       why: 'The thick filter makes a very clean cup, which suits delicate, sweet coffees.',
     },
   },
+  drip: {
+    type: 'drip',
+    name: 'Filter machine',
+    tagline: 'Classic drip coffee, by the jug.',
+    scaling: 'ratio',
+    sizes: [
+      { id: '4', label: '4-cup (0.6 L)', maxWater: 600, minWater: 250 },
+      { id: '8', label: '8-cup (1.2 L)', maxWater: 1150, minWater: 350 },
+      { id: '10', label: '10-cup (1.5 L)', maxWater: 1400, minWater: 400 },
+      { id: '12', label: '12-cup (1.8 L)', maxWater: 1700, minWater: 450 },
+    ],
+    defaultSizeId: '10',
+    ratio: 16.5,
+    tempC: 'machine',
+    coarseness: 55,
+    grindLabel: 'Medium',
+    grindLike: 'Like sand',
+    totalTime: '5–10 min',
+    roasts: ['light', 'medium', 'dark'],
+    beans: {
+      roast: 'Medium roast',
+      origins: 'Colombia, Brazil or a breakfast blend',
+      why: 'A filter machine is forgiving. Balanced, chocolatey coffees make a great everyday pot.',
+    },
+  },
   coldbrew: {
     type: 'coldbrew',
     name: 'Cold brew',
@@ -152,7 +177,7 @@ export const BREWERS: Record<BrewerType, BrewerDef> = {
   },
 }
 
-export const BREWER_ORDER: BrewerType[] = ['v60', 'aeropress', 'chemex', 'frenchpress', 'moka', 'coldbrew']
+export const BREWER_ORDER: BrewerType[] = ['v60', 'aeropress', 'chemex', 'frenchpress', 'drip', 'moka', 'coldbrew']
 
 /** Friendly name for a specific brewer: "V60 02", "45 cl French press", "AeroPress XL". */
 export function brewerName(type: BrewerType, size: BrewerSize) {
@@ -161,6 +186,7 @@ export function brewerName(type: BrewerType, size: BrewerSize) {
   if (type === 'aeropress') return size.id === 'std' ? 'AeroPress' : 'AeroPress XL'
   if (type === 'coldbrew') return `${size.label} cold brew jug`
   if (type === 'chemex') return `${size.label} Chemex`
+  if (type === 'drip') return `${size.label.split(' (')[0]} filter machine`
   return `${size.label} ${def.name.toLowerCase()}`
 }
 

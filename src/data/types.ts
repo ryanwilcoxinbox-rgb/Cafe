@@ -1,4 +1,4 @@
-export type BrewerType = 'v60' | 'aeropress' | 'moka' | 'frenchpress' | 'chemex' | 'coldbrew'
+export type BrewerType = 'v60' | 'aeropress' | 'moka' | 'frenchpress' | 'chemex' | 'coldbrew' | 'drip'
 
 export type Strength = 'lighter' | 'balanced' | 'stronger'
 
@@ -64,7 +64,8 @@ export interface BrewerDef {
   defaultSizeId: string
   /** Grams of water per gram of coffee at "balanced". */
   ratio: number
-  tempC: number | 'cold'
+  /** 'machine' = the brewer heats its own water (filter machine). */
+  tempC: number | 'cold' | 'machine'
   /** 0 (Turkish) → 100 (coarsest). Grinders map this onto their own dial. */
   coarseness: number
   grindLabel: string

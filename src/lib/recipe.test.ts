@@ -141,3 +141,31 @@ describe('fine-tune', () => {
     expect(r.prep[0]).toMatch(/90°C/)
   })
 })
+
+describe('Filter machine', () => {
+  const drip: Kit = { ...kit, brewers: [{ uid: 'm', type: 'drip', sizeId: '10' }] }
+
+  it('scales a pot for four at 1:16.5, with the machine heating the water', () => {
+    const r = buildRecipe({ type: 'drip', kit: drip, people: 4, strength: 'balanced' })
+    expect(r.water).toBe(1000)
+    expect(r.coffee).toBe(60.6)
+    expect(r.tempC).toBeNull()
+    expect(r.temp.value).toBe('Machine')
+    expect(r.prep[0]).toMatch(/Fill the tank with 1000 ml/)
+    expect(r.grind.grinder?.id).toBe('wancle')
+    expect(r.steps[0].seconds).toBe(390)
+  })
+
+  it('tops up small pots to the minimum and suggests the 1–4 cup setting', () => {
+    const r = buildRecipe({ type: 'drip', kit: drip, people: 1, strength: 'balanced' })
+    expect(r.water).toBe(400)
+    expect(r.notes.join(' ')).toMatch(/at least 400 g/)
+    expect(r.steps[0].body).toMatch(/1–4 cup setting/)
+  })
+
+  it('splits a big crowd into two pots', () => {
+    const r = buildRecipe({ type: 'drip', kit: drip, people: 8, strength: 'balanced' })
+    expect(r.rounds).toBe(2)
+    expect(r.notes[0]).toMatch(/10-cup filter machine/)
+  })
+})

@@ -231,6 +231,53 @@ export function ColdBrewArt({ className, brewing }: ArtProps) {
   )
 }
 
+export function DripArt({ className, brewing }: ArtProps) {
+  const clip = useClip()
+  const body = '#3a3431'
+  const trim = '#4d4541'
+  const carafe = 'M30 72 L64 72 L66 78 C73 84 75 97 73 110 C72 118 67 122 59 122 L35 122 C27 122 22 118 21 110 C19 97 21 84 28 78 Z'
+  return (
+    <Svg className={className} label="Filter coffee machine">
+      <defs>
+        <clipPath id={clip}>
+          <path d={carafe} />
+        </clipPath>
+      </defs>
+      {/* Tower with the water tank window */}
+      <rect x="74" y="16" width="30" height="112" rx="5" fill={body} stroke="var(--glass-edge)" strokeWidth="0.8" />
+      <rect x="81" y="30" width="16" height="54" rx="3" fill="var(--glass)" stroke="var(--glass-edge)" strokeWidth="0.8" />
+      <rect x="82" y={brewing ? 58 : 44} width="14" height={brewing ? 25 : 39} rx="2" fill="#9fc3d6" opacity="0.55">
+        {brewing && <animate attributeName="y" from="44" to="72" dur="60s" fill="freeze" />}
+        {brewing && <animate attributeName="height" from="39" to="11" dur="60s" fill="freeze" />}
+      </rect>
+      <g stroke="var(--glass-edge)" strokeWidth="0.7" opacity="0.8">
+        {[40, 50, 60, 70].map((y) => (
+          <path key={y} d={`M83 ${y} h4`} />
+        ))}
+      </g>
+      <circle cx="89" cy="108" r="3.2" fill={brewing ? 'var(--accent)' : trim} />
+      {/* Head and filter basket */}
+      <rect x="14" y="12" width="90" height="28" rx="7" fill={body} stroke="var(--glass-edge)" strokeWidth="0.8" />
+      <path d="M24 40 L70 40 L63 58 L31 58 Z" fill={trim} stroke="var(--glass-edge)" strokeWidth="0.8" />
+      <path d="M32 44 L62 44" stroke="var(--glass-edge)" strokeWidth="0.7" opacity="0.6" />
+      {/* Hotplate and base */}
+      <rect x="12" y="122" width="94" height="10" rx="3" fill={body} stroke="var(--glass-edge)" strokeWidth="0.8" />
+      <rect x="22" y="120" width="50" height="3" rx="1.5" fill={trim} />
+      {/* Carafe */}
+      <path d={carafe} fill="var(--glass)" {...EDGE} />
+      <g clipPath={`url(#${clip})`}>
+        <rect x="0" y={brewing ? 112 : 96} width="120" height="40" fill="var(--coffee)">
+          {brewing && <animate attributeName="y" from="118" to="96" dur="60s" fill="freeze" />}
+        </rect>
+      </g>
+      <rect x="27" y="66" width="40" height="8" rx="3" fill={body} />
+      <path d="M68 82 C82 82 83 108 69 111" fill="none" stroke={body} strokeWidth="5" strokeLinecap="round" />
+      <path d="M26 86 V114" stroke="#fff" strokeWidth="2" opacity="0.35" />
+      {brewing && <Drips x={47} from={60} to={94} />}
+    </Svg>
+  )
+}
+
 export function CupArt({ className }: { className?: string }) {
   const clip = useClip()
   const body = 'M20 54 L100 54 L95 116 C94 127 86 133 76 133 L44 133 C34 133 26 127 25 116 Z'
@@ -299,6 +346,7 @@ const MAP: Record<BrewerType, (p: ArtProps) => ReactNode> = {
   moka: MokaArt,
   frenchpress: FrenchPressArt,
   coldbrew: ColdBrewArt,
+  drip: DripArt,
 }
 
 export function BrewerArt({ type, ...props }: ArtProps & { type: BrewerType }) {

@@ -139,7 +139,13 @@ export function Brew({ type, kit }: { type: BrewerType; kit: Kit }) {
             )
           })}
         </ul>
-        <Hand className="mt-4 text-center">The timer starts when you start pouring.</Hand>
+        <Hand className="mt-4 text-center">
+          {type === 'drip'
+            ? 'Start the timer when you switch the machine on.'
+            : type === 'moka'
+              ? 'Start the timer when it goes on the heat.'
+              : 'The timer starts when you start pouring.'}
+        </Hand>
       </Screen>
     )
   }

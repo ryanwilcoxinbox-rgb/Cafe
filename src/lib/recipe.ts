@@ -122,13 +122,14 @@ export function grindFor(
 
 /** Brew temperature: the user's fine-tune, else the brewer's default nudged by roast. */
 export function brewTemp(def: BrewerDef, roast?: Roast, custom?: number): number | null {
-  if (def.tempC === 'cold' || def.type === 'moka') return null
+  if (def.tempC === 'cold' || def.tempC === 'machine' || def.type === 'moka') return null
   if (custom) return custom
   return Math.min(100, def.tempC + (roast ? ROAST_TEMP[roast] : 0))
 }
 
 export function tempFor(def: BrewerDef, kit: Kit, t: number | null) {
   if (def.tempC === 'cold') return { value: 'Cold', hint: 'Filtered water, fridge-cold is fine' }
+  if (def.tempC === 'machine') return { value: 'Machine', hint: 'It heats the water for you' }
   if (t === null) return { value: 'Just boiled', hint: 'Hot water goes into the base' }
   const wait = t >= 97 ? 'Straight off the boil' : t >= 95 ? 'Boil, then wait ~30 s' : t >= 92 ? 'Boil, then wait ~1 min' : 'Boil, then wait ~2 min'
   return { value: `${t}°C`, hint: kit.kettle.tempControl ? `Set your kettle to ${t}°C` : wait }
@@ -323,6 +324,8 @@ function prepFor(c: Ctx): string[] {
   const heat =
     def.tempC === 'cold'
       ? `Measure out ${c.water} ml of cold, filtered water.`
+      : def.tempC === 'machine'
+        ? `Fill the tank with ${c.water} ml of cold, filtered water. Measure it with a jug, because the "cup" marks on the tank vary by brand.`
       : c.tempC === null
         ? 'Boil the kettle. Starting with hot water stops the coffee from cooking on the stove.'
         : `Heat your water to ${c.tempC}°C${kit.kettle.tempControl ? '' : ' (' + tempFor(def, kit, c.tempC).hint.toLowerCase() + ')'}.`
@@ -349,11 +352,31 @@ function prepFor(c: Ctx): string[] {
       'Screw the top on using a tea towel, because the base is hot.',
     ],
     coldbrew: ['Put the ground coffee into the mesh filter and fit the filter into the jug.'],
+    drip: [
+      "Put a paper filter in the basket (fold the seams first if it's a cone filter). If yours has a permanent mesh filter, just make sure it's clean.",
+      'Add the coffee and give the basket a gentle shake to level it, so the water runs through evenly.',
+      'Put the empty carafe on the hotplate, lid on.',
+    ],
   }
   return [heat, grind, ...specific[def.type], tare].filter(Boolean)
 }
 
 const STEPS: Record<BrewerType, (c: Ctx) => Step[]> = {
+  drip: (c) => [
+    {
+      title: 'Switch it on',
+      why: 'The machine heats the water and showers it over the coffee for you.',
+      body: `Press start${c.water <= 500 && c.def.sizes.some((s) => s.maxWater > 1000) ? '. For a small pot, use the 1–4 cup setting if your machine has one' : ''}. It's done when the dripping slows to the odd drop.`,
+      // Roughly how long a typical 1,000 W machine takes for this much water.
+      seconds: Math.round(90 + c.water * 0.3),
+      aside: 'Kettle gets the day off.',
+    },
+    {
+      title: 'Swirl & serve',
+      why: 'The first and last drips come out at different strengths. A swirl evens them out.',
+      body: `Give the carafe a gentle swirl and pour${c.people > 1 ? ` ${c.people} cups` : ''}. Don't leave it on the hotplate for more than about 20 minutes, because it stews and turns bitter. Keep any extra in a flask.`,
+    },
+  ],
   v60: (c) => {
     const bloom = round5(c.coffee * 3)
     return [

@@ -23,7 +23,7 @@ Everything is stored on the device (localStorage). There are no accounts and no 
 
 | Brewers | Grinders (exact settings) | Also handles |
 |---|---|---|
-| V60 (01/02/03), AeroPress (Original/XL), Chemex (3–10 cup), French press (35 cl–1.5 L), Moka pot (1–12 cup), Hario cold brew (600 ml / 1 L) | KINGrinder K6 (clicks), Wancle 28-setting electric, Comandante C40, Timemore C2/C3, Baratza Encore | Other burr grinders, blade grinders, pre-ground coffee, no scale (spoons and ml), regular vs gooseneck kettle, temperature-control kettles |
+| V60 (01/02/03), AeroPress (Original/XL), Chemex (3–10 cup), French press (35 cl–1.5 L), Moka pot (1–12 cup), Hario cold brew (600 ml / 1 L), filter machine / drip coffee maker (4–12 cup) | KINGrinder K6 (clicks), Wancle 28-setting electric, Comandante C40, Timemore C2/C3, Baratza Encore | Other burr grinders, blade grinders, pre-ground coffee, no scale (spoons and ml), regular vs gooseneck kettle, temperature-control kettles |
 
 > Grind settings are **starting points** from common community charts. The taste feedback after each brew adjusts them per brewer and grinder.
 
@@ -50,7 +50,7 @@ Stack: Vite, React 19, TypeScript, Tailwind CSS 4, Motion, vite-plugin-pwa, Vite
 - `src/lib/dialin.ts`: taste feedback turned into grind and strength adjustments
 - `src/screens/*`: Kit setup → Home → Recipe → Brew → Done → Journal, plus Beans
 
-**Add a grinder:** add an entry to `GRINDERS` with points for the coarseness anchors (25 moka, 40 AeroPress, 50 V60, 60 Chemex, 75 French press, 82 cold brew).
+**Add a grinder:** add an entry to `GRINDERS` with points for the coarseness anchors (25 moka, 40 AeroPress, 50 V60, 55 filter machine, 60 Chemex, 75 French press, 82 cold brew).
 **Add a brewer:** add it to `BREWERS`, give it a step script in `STEPS` and a prep list in `prepFor`, and draw an illustration in `components/Art.tsx`.
 
 ## Deploy

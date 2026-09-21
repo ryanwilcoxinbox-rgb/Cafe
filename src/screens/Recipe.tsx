@@ -176,7 +176,7 @@ export function Recipe({ type, kit }: { type: BrewerType; kit: Kit }) {
           <button onClick={() => setTuning(!tuning)} className="flex w-full items-center justify-between py-2 text-left" aria-expanded={tuning}>
             <span>
               <span className="font-medium">Fine-tune</span>
-              <span className="ml-2 text-sm text-muted">{custom ? 'your recipe' : 'ratio & temperature'}</span>
+              <span className="ml-2 text-sm text-muted">{custom ? 'your recipe' : r.tempC !== null ? 'ratio & temperature' : 'ratio'}</span>
             </span>
             <span className={`text-muted transition-transform ${tuning ? 'rotate-90' : ''}`}>
               <Chevron />

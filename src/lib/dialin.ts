@@ -18,6 +18,7 @@ const EXTRA: Record<Recipe['brewer']['type'], { sour: string; bitter: string }> 
   frenchpress: { sour: 'Or leave the first steep a minute longer.', bitter: 'And pour it all off the grounds straight away.' },
   moka: { sour: 'Keep the heat steady so it flows the whole time.', bitter: 'Take it off the heat as soon as it turns pale.' },
   coldbrew: { sour: 'Steep 2–4 hours longer, too.', bitter: 'Steep a few hours less, too.' },
+  drip: { sour: 'A touch more coffee helps too.', bitter: "And don't leave it on the hotplate once it's done." },
 }
 
 export function advise(recipe: Recipe, taste: Taste, body?: Body): Advice {
