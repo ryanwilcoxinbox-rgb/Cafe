@@ -18,7 +18,8 @@ export function Home({ kit }: { kit: Kit }) {
   const favourites = journal.filter((j) => j.favourite && kit.brewers.some((b) => b.type === j.type)).slice(0, 4)
   const types = BREWER_ORDER.filter((t) => kit.brewers.some((b) => b.type === t))
   const last = journal[0]
-  const [picked, setPicked] = useState<BrewerType>(last && types.includes(last.type) ? last.type : types[0])
+  // Always open on the first brewer in the list (same order as My kit), not the last one used.
+  const [picked, setPicked] = useState<BrewerType>(types[0])
 
   return (
     <Screen
