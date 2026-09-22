@@ -62,9 +62,14 @@ export function Done({ type, kit }: { type: BrewerType; kit: Kit }) {
     <Screen
       header={<StepHeader step={4} label="Brew" />}
       cta={
-        <Button className="w-full" arrow disabled={!taste} onClick={save}>
-          Save this brew
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="soft" className="px-4" onClick={() => go('', true)}>
+            Don't save
+          </Button>
+          <Button className="flex-1" arrow disabled={!taste} onClick={save}>
+            Save this brew
+          </Button>
+        </div>
       }
       footer={['A small ritual', 'a brighter you']}
     >

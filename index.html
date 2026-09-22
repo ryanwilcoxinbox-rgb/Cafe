@@ -12,9 +12,45 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="description" content="Coffee recipes built around your kit. A better cup, one step at a time." />
     <title>BrewPrint</title>
+    <style>
+      /* Splash shown until React mounts and replaces #root's contents. Inline so it paints before any JS/CSS loads. */
+      html, body { margin: 0; background: #f4ede3; }
+      .splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #b5603c; font: 500 28px Georgia, 'Times New Roman', serif; }
+      .splash p { margin: 0; color: #2a1d17; letter-spacing: 0.01em; }
+      .splash .steam path { stroke-dasharray: 18; animation: steam 1.8s ease-in-out infinite; opacity: 0; }
+      .splash .steam path:nth-child(2) { animation-delay: 0.3s; }
+      .splash .steam path:nth-child(3) { animation-delay: 0.6s; }
+      @keyframes steam {
+        0% { opacity: 0; transform: translateY(4px); stroke-dashoffset: 18; }
+        40% { opacity: 1; }
+        100% { opacity: 0; transform: translateY(-6px); stroke-dashoffset: 0; }
+      }
+      @media (prefers-color-scheme: dark) {
+        html, body { background: #17110e; }
+        .splash { color: #d7774d; }
+        .splash p { color: #f3e8da; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .splash .steam path { animation: none; opacity: 1; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="splash" role="status" aria-label="Loading BrewPrint">
+        <svg width="104" height="104" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <g class="steam">
+            <path d="M24 20c-3-4 3-6 0-10" />
+            <path d="M32 20c-3-4 3-6 0-10" />
+            <path d="M40 20c-3-4 3-6 0-10" />
+          </g>
+          <path d="M14 28h36v8a18 18 0 0 1-36 0z" />
+          <path d="M50 31h3a5 5 0 0 1 0 10h-4" />
+          <path d="M12 58h40" />
+        </svg>
+        <p>BrewPrint</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

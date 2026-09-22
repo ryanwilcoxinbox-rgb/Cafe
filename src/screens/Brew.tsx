@@ -204,8 +204,9 @@ export function Brew({ type, kit }: { type: BrewerType; kit: Kit }) {
                 {mmss(shown)}
               </p>
               <p className="tabular mt-2 text-sm text-muted">
-                {step.seconds ? (timeUp ? "Time's up" : 'left in this step') : 'Tap next when ready'} · total {mmss(total.elapsed / 1000)}
+                {step.seconds ? (timeUp ? "Time's up" : 'left in this step') : 'Tap next when ready'}
               </p>
+              <p className="tabular mt-1 text-sm text-muted">Total {mmss(total.elapsed / 1000)}</p>
             </div>
             <BrewerArt type={type} brewing className="-mr-2 h-48 w-40 shrink-0" />
           </div>
