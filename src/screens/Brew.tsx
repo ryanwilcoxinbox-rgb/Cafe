@@ -87,6 +87,8 @@ export function Brew({ type, kit }: { type: BrewerType; kit: Kit }) {
   }
 
   const hasScale = kit.scales.length > 0
+  // Weights are the whole job on a pour-over, so they get their own list before the timer starts.
+  const pours = hasScale ? r.steps.filter((s) => s.target !== undefined) : []
   const summary = [
     `${kit.scales.includes('micro') ? r.coffee.toFixed(1) : r.coffee} g coffee`,
     `${r.water} ${hasScale ? 'g' : 'ml'} water`,
@@ -114,6 +116,24 @@ export function Brew({ type, kit }: { type: BrewerType; kit: Kit }) {
             </span>
           ))}
         </div>
+        {pours.length > 0 && (
+          <section aria-labelledby="pour-plan" className="mt-5 rounded-2xl border border-line">
+            <h2 id="pour-plan" className="eyebrow px-4 pt-3 pb-1">
+              Pour plan
+            </h2>
+            <ul>
+              {pours.map((s, i) => (
+                <li key={i} className="flex items-baseline gap-3 border-t border-line px-4 py-2.5">
+                  <span className="flex-1 text-[15px]">{s.title}</span>
+                  {s.seconds && <span className="tabular text-sm text-muted">{mmss(s.seconds)}</span>}
+                  <span className="tabular w-[4.5rem] text-right font-serif text-xl text-accent">{s.target} g</span>
+                </li>
+              ))}
+            </ul>
+            <p className="px-4 pt-2 pb-3 text-sm text-muted">What the scale should read by the end of each pour.</p>
+          </section>
+        )}
+
         <ul className="mt-6 space-y-2">
           {r.prep.map((line, i) => {
             const on = checked.includes(i)
@@ -153,6 +173,8 @@ export function Brew({ type, kit }: { type: BrewerType; kit: Kit }) {
   const shown = remaining !== null ? Math.max(0, Math.ceil(remaining)) : stepWatch.elapsed / 1000
   const progress = step.seconds ? Math.min(1, stepWatch.elapsed / 1000 / step.seconds) : 0
   const timeUp = remaining !== null && remaining <= 0
+  const showTarget = step.target !== undefined && hasScale
+  const targetSize = String(step.target ?? '').length >= 4 ? 42 : String(step.target ?? '').length === 3 ? 56 : 64
 
   return (
     <Screen
@@ -198,9 +220,10 @@ export function Brew({ type, kit }: { type: BrewerType; kit: Kit }) {
           <h1 className="font-serif text-[40px] leading-[1.05]">{step.title}</h1>
           {step.why && <p className="mt-2 text-[16px] leading-snug text-muted">{step.why}</p>}
 
-          <div className="relative mt-4 flex items-center justify-between">
+          {/* The two numbers you actually pour by: time left, and what the scale should read. */}
+          <div className="relative mt-4 flex items-start justify-between gap-2">
             <div>
-              <p className={`tabular font-serif text-[72px] leading-none transition-colors ${timeUp ? 'text-accent' : ''}`} aria-live="off">
+              <p className={`tabular font-serif text-[64px] leading-none transition-colors ${timeUp ? 'text-accent' : ''}`} aria-live="off">
                 {mmss(shown)}
               </p>
               <p className="tabular mt-2 text-sm text-muted">
@@ -208,7 +231,18 @@ export function Brew({ type, kit }: { type: BrewerType; kit: Kit }) {
               </p>
               <p className="tabular mt-1 text-sm text-muted">Total {mmss(total.elapsed / 1000)}</p>
             </div>
-            <BrewerArt type={type} brewing className="-mr-2 h-48 w-40 shrink-0" />
+            {showTarget ? (
+              <div className="pt-1 text-right">
+                {/* Big batches run to four digits, so the number shrinks rather than wrapping. */}
+                <p className="tabular font-serif leading-none text-accent" style={{ fontSize: targetSize }}>
+                  {step.target}
+                  <span style={{ fontSize: targetSize * 0.47 }}> g</span>
+                </p>
+                <p className="mt-2 text-sm text-muted">on the scale</p>
+              </div>
+            ) : (
+              <BrewerArt type={type} brewing className="-mr-2 h-44 w-36 shrink-0" />
+            )}
           </div>
 
           {step.aside && <Hand className="mt-2 -rotate-3">{step.aside}</Hand>}
@@ -216,11 +250,7 @@ export function Brew({ type, kit }: { type: BrewerType; kit: Kit }) {
           <p className="mt-4 text-center text-[18px] leading-snug">
             <Emphasis text={step.body} />
           </p>
-          {step.target !== undefined && hasScale && (
-            <p className="mt-3 text-center">
-              <span className="tabular inline-block rounded-full bg-accent-soft px-4 py-1.5 font-medium">Scale target: {step.target} g</span>
-            </p>
-          )}
+          {showTarget && <BrewerArt type={type} brewing className="mx-auto mt-4 h-40 w-36" />}
           {!stepWatch.running && <p className="mt-4 text-center font-medium text-accent">Paused</p>}
         </motion.div>
       </AnimatePresence>
