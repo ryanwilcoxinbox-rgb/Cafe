@@ -6,6 +6,7 @@ import { BREWER_ORDER, BREWERS } from '../data/brewers'
 import type { BrewerType, Kit } from '../data/types'
 import { go } from '../lib/router'
 import { useStore } from '../lib/store'
+import { SYNC_ENABLED } from '../lib/sync'
 import { brewAgain } from '../lib/brewAgain'
 import { activeBean } from '../lib/useRecipe'
 import { beanAge, RoastDot } from './Beans'
@@ -38,6 +39,12 @@ export function Home({ kit }: { kit: Kit }) {
             <IconLink label="My kit" onClick={() => go('kit')}>
               <path d="M4 7h10M18 7h2M4 17h4M12 17h8M16 5v4M10 15v4" />
             </IconLink>
+            {SYNC_ENABLED && (
+              <IconLink label="Account and backup" onClick={() => go('account')}>
+                <circle cx="12" cy="8.5" r="3.5" />
+                <path d="M5 19.5c1.2-3.3 3.8-5 7-5s5.8 1.7 7 5" />
+              </IconLink>
+            )}
           </nav>
         </>
       }

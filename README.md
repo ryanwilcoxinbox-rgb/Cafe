@@ -48,6 +48,7 @@ Stack: Vite, React 19, TypeScript, Tailwind CSS 4, Motion, vite-plugin-pwa, Vite
 - `src/lib/pwa.ts`, `updateLogic.ts`: service-worker registration and update checks
 - `src/lib/install.ts`, `installPrompt.ts`, `notices.ts`: the install banner and the one-banner-at-a-time queue
 - `src/lib/dialin.ts`: taste feedback turned into grind and strength adjustments
+- `src/lib/syncLogic.ts`, `sync.ts`: optional sign-in and cloud backup (Supabase)
 - `src/screens/*`: Kit setup → Home → Recipe → Brew → Done → Journal, plus Beans
 
 **Add a grinder:** add an entry to `GRINDERS` with points for the coarseness anchors (25 moka, 40 AeroPress, 50 V60, 55 filter machine, 60 Chemex, 75 French press, 82 cold brew).
@@ -56,6 +57,29 @@ Stack: Vite, React 19, TypeScript, Tailwind CSS 4, Motion, vite-plugin-pwa, Vite
 ## Deploy
 
 Hosted on Vercel, which picks up Vite automatically (build: `npm run build`, output: `dist`). `.github/workflows/ci.yml` runs the tests and a build on every push. The app uses relative paths and hash routing, so any static host works.
+
+Vercel Web Analytics is wired up in `src/App.tsx`. Because hash routes aren't page loads, each screen is reported by hand as a tidy path (`/recipe/v60`, `/beans/[id]`); bean ids never leave the device. It only runs in production builds, so `npm run dev` reports nothing.
+
+## Sign-in and backup (optional)
+
+Everything is saved on the device first, so BrewPrint works offline and without an account. Signing in (email plus a one-time code, no password) copies the kit, beans, journal and dial-in to Supabase and restores them on any device. The first sign-in on a phone that already has data merges it with the cloud copy; brews and bags logged on two devices are combined, never overwritten.
+
+Sign-in uses a typed code rather than a magic link because a link opens Safari, which on iPhone doesn't share storage with the Home Screen app.
+
+Without the two env vars below, the app builds exactly as before, with no sign-in anywhere.
+
+**One-time setup**
+
+1. In the Supabase SQL editor, run `supabase/migrations/20260922000000_user_data.sql`.
+2. Authentication → Emails → **Magic Link** template: include `{{ .Token }}` so the email contains the code, e.g. `<p>Your BrewPrint code is <strong>{{ .Token }}</strong></p>`.
+3. Add to Vercel (Production and Preview) and to `.env.local` for local dev:
+   ```
+   VITE_SUPABASE_URL=https://<project>.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_KEY=<publishable or anon key>
+   ```
+   The publishable key is safe in the browser; row-level security limits each person to their own row.
+
+Supabase's built-in email sender allows only a few emails an hour. That's fine for personal use; set up custom SMTP (Authentication → Emails → SMTP) before inviting others.
 
 ## Installing and updates
 

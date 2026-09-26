@@ -75,8 +75,13 @@ function load(): State {
 
 let state: State = load()
 const listeners = new Set<() => void>()
+const localListeners = new Set<() => void>()
 
-export function setState(update: (s: State) => State) {
+/**
+ * `fromSync` marks data that came from the cloud, so cloud sync doesn't treat it as a local edit
+ * and send it straight back.
+ */
+export function setState(update: (s: State) => State, { fromSync = false } = {}) {
   state = update(state)
   try {
     localStorage.setItem(KEY, JSON.stringify(state))
@@ -84,6 +89,13 @@ export function setState(update: (s: State) => State) {
     // Private mode or storage full: keep working in memory.
   }
   listeners.forEach((l) => l())
+  if (!fromSync) localListeners.forEach((l) => l())
+}
+
+/** Called after every change made on this device (not ones pulled from the cloud). */
+export function onLocalChange(l: () => void) {
+  localListeners.add(l)
+  return () => localListeners.delete(l)
 }
 
 export function getState() {

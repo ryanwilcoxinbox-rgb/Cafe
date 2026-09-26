@@ -4,3 +4,9 @@ declare const __BUILD__: {
   buildTime: string
   commit: string
 }
+
+interface ImportMetaEnv {
+  /** Cloud sync. Leave both unset to build BrewPrint without sign-in. */
+  readonly VITE_SUPABASE_URL?: string
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string
+}

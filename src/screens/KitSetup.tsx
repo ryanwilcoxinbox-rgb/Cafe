@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { AppVersion } from '../components/AppVersion'
 import { BrewerArt, CupArt } from '../components/Art'
-import { Button, Chip, Hand, Screen, Segmented, StepHeader } from '../components/ui'
+import { Button, Chevron, Chip, Hand, Screen, Segmented, StepHeader } from '../components/ui'
 import { BREWER_ORDER, BREWERS } from '../data/brewers'
 import { GRINDERS } from '../data/grinders'
 import type { BrewerType, Kit, ScaleType } from '../data/types'
 import { go } from '../lib/router'
 import { getState, setState, uid } from '../lib/store'
+import { SYNC_ENABLED } from '../lib/sync'
 
 const EMPTY_KIT: Kit = {
   brewers: [],
@@ -98,6 +99,17 @@ function BrewersPage({ kit, setKit, fresh }: PageProps & { fresh: boolean }) {
   return (
     <>
       <Title title={fresh ? "What's in your kit?" : 'Your brewers'} sub="Tap everything you brew with. Recipes are built around it." />
+      {fresh && SYNC_ENABLED && (
+        <button
+          onClick={() => go('account')}
+          className="-mt-2 mb-5 flex w-full items-center gap-3 rounded-2xl bg-sunk/70 px-4 py-3 text-left text-[15px]"
+        >
+          <span className="flex-1">
+            Used BrewPrint before? <span className="font-medium text-accent">Sign in to restore</span> your kit and journal.
+          </span>
+          <Chevron />
+        </button>
+      )}
       <div className="space-y-3">
         {BREWER_ORDER.map((type) => {
           const def = BREWERS[type]
