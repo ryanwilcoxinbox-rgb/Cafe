@@ -1,8 +1,11 @@
 import { AnimatePresence } from 'motion/react'
+import { Analytics } from '@vercel/analytics/react'
 import { BREWERS } from './data/brewers'
 import type { BrewerType } from './data/types'
 import { go, useRoute } from './lib/router'
 import { useStore } from './lib/store'
+import { SYNC_ENABLED } from './lib/sync'
+import { Account } from './screens/Account'
 import { BeanForm, BeanList } from './screens/Beans'
 import { Brew } from './screens/Brew'
 import { Done } from './screens/Done'
@@ -16,9 +19,12 @@ export function App() {
   const [page, param] = useRoute()
   const type = param as BrewerType
   const owns = kit && param && param in BREWERS && kit.brewers.some((b) => b.type === type)
+  const view = analyticsPath(page, param)
 
   let screen
-  if (!kit || page === 'kit') screen = <KitSetup key="kit" />
+  // Reachable before setup, so someone on a new phone can restore instead of starting over.
+  if (page === 'account' && SYNC_ENABLED) screen = <Account key="account" />
+  else if (!kit || page === 'kit') screen = <KitSetup key="kit" />
   else if (page === 'recipe' && owns) screen = <Recipe key={`recipe-${type}`} type={type} kit={kit} />
   else if (page === 'brew' && owns) screen = <Brew key={`brew-${type}`} type={type} kit={kit} />
   else if (page === 'done' && owns) screen = <Done key={`done-${type}`} type={type} kit={kit} />
@@ -39,6 +45,19 @@ export function App() {
       <div className="min-h-dvh bg-card md:min-h-0 md:w-[420px] md:overflow-hidden md:rounded-[32px] md:border md:border-line md:shadow-[0_30px_80px_-30px_rgba(60,35,20,0.35)]">
         <AnimatePresence mode="wait">{screen}</AnimatePresence>
       </div>
+      {/* Hash routes aren't page loads, so each screen is reported by hand. Dev builds report nothing. */}
+      {import.meta.env.PROD && <Analytics route={view} path={view} />}
     </div>
   )
+}
+
+/**
+ * The screen, as a tidy path for analytics: "/recipe/v60", "/beans/[id]".
+ * Bean ids stay out of it; nothing here identifies anyone.
+ */
+function analyticsPath(page?: string, param?: string) {
+  if (!page) return '/'
+  if (page === 'beans') return param ? (param === 'new' ? '/beans/new' : '/beans/[id]') : '/beans'
+  if (!param) return `/${page}`
+  return `/${page}/${param in BREWERS ? param : '[id]'}`
 }
